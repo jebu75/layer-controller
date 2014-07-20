@@ -1,0 +1,13 @@
+{
+    "name": "layer-controller",
+    "version": "0.0.1",
+    "homepage": "https://github.com/btfou/layer-controller",
+    "repository": "https://github.com/btfou/layer-controller",
+    "dependencies": {
+        "grunt": "0.x.x",
+        "grunt-contrib-jshint": "0.6.x",
+        "jshint-stylish": "0.2.x",
+        "grunt-contrib-watch": "0.5.x"
+    },
+    "engine": "node >= 0.10"
+}

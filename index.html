@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+<meta name="description" content="A layer loading and control widget for esrijs.">
+<meta name="author" content="btfou">
+<title>Layer Controller</title>
+<!-- loading fonts with xstyle can result in unseemly font changes as text is rendered before css is loaded -->
+<link href="//fonts.googleapis.com/css?family=Open+Sans:400,600,800" rel="stylesheet">
+<!-- Font Awesome is required!!! -->
+<link href="//netdna.bootstrapcdn.com/font-awesome/4.1.0/css/font-awesome.css" rel="stylesheet">
+<style type="text/css">
+html, body {
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    padding: 0;
+}
+body {
+    font: 12px 'Open Sans', sans-serif;
+}
+</style>
+</head>
+<body class="claro">
+<div id="container"></div>
+<script>dojoConfig = {async: true, packages: [{name: 'app', location: location.pathname.replace(/[^\/]+$/, '') + 'js'}]};</script>
+<script src="//js.arcgis.com/3.10compact/"></script>
+<script>
+var map, layerController; //dev
+require([
+    'dijit/layout/BorderContainer',
+    'dijit/layout/ContentPane',
+    'esri/config',
+    'esri/tasks/GeometryService',
+    'esri/map',
+    'esri/graphic',
+    'app/controls/LayerController',
+    'xstyle/css!dijit/themes/claro/claro.css',
+    'xstyle/css!esri/css/esri.css',
+    'dojo/domReady!'
+], function (
+    BC,
+    CP,
+    esriConfig,
+    GeometryService,
+    Map,
+    Graphic,
+    LayerController
+) {
+    'use strict';
+    
+    //layout
+    var bc = new BC({liveSplitters: false, style: 'width:100%;height:100%;z-index:1;'}, 'container');
+    bc.startup();
+    bc.addChild(new CP({region: 'left', content: '<div id="layer-controller"></div>', style: 'width:400px;z-index:1;'}));
+    bc.addChild(new CP({region: 'center', id: 'map', style: 'padding:0;overflow:hidden;z-index:1;'}));
+    
+    //layer controls use default geom srv for zooming to layer extent if not in map sr
+    esriConfig.defaults.geometryService = new GeometryService('http://tasks.arcgisonline.com/ArcGIS/rest/services/Geometry/GeometryServer');
+    
+    //map
+    map = new Map('map', {basemap: 'topo', center: [-123.3, 45.9], zoom: 11});
+    
+    //array of layerParams for loading layers and building controls
+    //added to controller and map bottom to top
+    var layerInfos = [{
+        type: 'tiled',
+        label: 'Light Gray (tiled test)',
+        url: 'http://services.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer'
+    }, {
+        type: 'dynamic',
+        label: 'FEMA Flood (dynamic test w/ sublayer menus)',
+        url: 'http://hazards.fema.gov/gis/nfhl/rest/services/public/NFHL/MapServer',
+        sublayerMenuItems: [{
+            label: 'Click Me',
+            title: 'Go ahead I dare you',
+            onClick: function () {
+                alert('esrijs rocks. dojo too.');
+            }
+        }]
+    }, {
+        type: 'image',
+        label: 'LandsatGLS/FalseColor (image test)',
+        url: 'http://imagery.arcgisonline.com/ArcGIS/rest/services/LandsatGLS/FalseColor/ImageServer',
+        opacity: 0.7
+    }, {
+        type: 'webTiled',
+        label: 'Stamen Toner (web tiled test)',
+        urlTemplate: 'http://${subDomain}.tile.stamen.com/toner/${level}/${col}/${row}.jpg',
+        subDomains: ['a', 'b', 'c', 'd'],
+        copyright: 'Map tiles by <a href="http://stamen.com">Stamen Design</a>, under <a href="http://creativecommons.org/licenses/by/3.0">CC BY 3.0</a>. Data by <a href="http://openstreetmap.org">OpenStreetMap</a>, under <a href="http://creativecommons.org/licenses/by-sa/3.0">CC BY SA</a>.'
+    }, {
+        type: 'dynamic',
+        label: 'Oregon Wetlands (layer group test w/ layer menu)',
+        url: 'http://venison.library.oregonstate.edu/arcgis/rest/services/wetlands/wetlands_restoration_Feb_2014/MapServer',
+        layerMenuItems: [{
+            label: 'Click Me',
+            title: 'Go ahead I dare you',
+            onClick: function () {
+                alert('esrijs rocks. dojo too.');
+            }
+        }]
+    }, {
+        type: 'dynamic',
+        label: 'NGS Control (no legend test)',
+        url: 'http://maps1.arcgisonline.com/ArcGIS/rest/services/NGS_Survey_Control_Points/MapServer'
+    }];
+    
+    //array of layerParams for adding draw layer(s)
+    var drawLayerInfos = [{
+        id: 'draw_polygon',
+        print: true
+    }, {
+        id: 'draw_polyline',
+        print: true
+    }, {
+        id: 'draw_point',
+        print: true
+    }, {
+        id: 'draw_text',
+        print: true
+    }, {
+        id: 'draw_temp',
+        print: false
+    }];
+    
+    //layer controller
+    layerController = new LayerController({
+        map: map, //map reference - required
+        drawLayerInfos: drawLayerInfos, //array of draw layer(s)
+        layerInfos: layerInfos, //array of layerParams
+        reorder: true, //allow layer reordering - default: false
+        basemapCount: 1 //number of basemap layers - default: 0
+    }, 'layer-controller');
+    layerController.startup();
+    
+    //add an application layer
+    layerController.addApplicationLayer({id: 'gl_test'});
+    //add test it
+    map.getLayer('gl_test').add(new Graphic({"geometry":{"rings":[[[-123.47931354269296,45.897965243726986],[-123.2980391286307,45.897965243726986],[-123.2980391286307,45.82815342789658],[-123.47931354269296,45.82815342789658],[-123.47931354269296,45.897965243726986]]],"spatialReference":{"wkid":4326}},"attributes":{"id":1405870376469,"type":"polygon"},"symbol":{"color":[0,100,0,77],"outline":{"color":[0,0,128,255],"width":3,"type":"esriSLS","style":"esriSLSShortDash"},"type":"esriSFS","style":"esriSFSSolid"}}));
+    
+    //events
+    //layerController.on('add-control', function (r) {
+    //    console.log(r);
+    //});
+    
+    //this isn't working for some reason
+    //layerController.on('add-application', function (r) {
+    //    console.log(r);
+    //});
+});
+</script>
+</body>
+</html>
