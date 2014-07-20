@@ -28,8 +28,8 @@ define([
     'esri/request',
     'esri/tasks/ProjectParameters',
     'esri/config',
-    'app/controls/_DynamicSublayerControl',
-    'app/controls/_DynamicFolderControl',
+    'app/controls/DynamicSublayerControl',
+    'app/controls/DynamicFolderControl',
     'dojo/text!app/controls/templates/LayerControl.html',
     //the css
     'xstyle/css!app/controls/css/LayerControl.css'
