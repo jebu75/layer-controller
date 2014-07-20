@@ -48,13 +48,14 @@ require(['app/controls/LayerController'], function (LayerController) {
 | Event | Description |
 | --- | --- |
 | `add-control` | Returns an object containing the layerParams and the layer control after layer control is added to the controller. |
-| 'add-application` | Returns layer after being added to map. Not working for some reason!? |
+| `add-application` | Returns layer after being added to map. Not working for some reason!? |
 
 ### Layer Parameters (layerParams)
 
 An object of options for loading the layer and building the control. All layerParams (except application and draw layers) have common options:
 
 | Option | Description |
+| --- | --- |
 | `type` | The layer type. Required. `dynamic`, `tiled`, `image`, `feature`, or `webTiled` |
 | `id` | A valid esrijs layer id. Not required, but handy if you want to access the layer via `map.getLayer('layer_id')` for some other use. If omitted the map assigned layer id is added to layerParams and returned with the `add-control` event. |
 | `label` | Label for the control. Required, but if omitted the layer controls will mixin a label reminding you to add one. |
