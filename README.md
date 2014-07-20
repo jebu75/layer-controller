@@ -29,6 +29,7 @@ require(['app/controls/LayerController'], function (LayerController) {
 #### Constructor
 
 | Option | Type | Description | Required |
+| --- | --- | --- | --- |
 | `map` | Object | Reference to the map. | true |
 | `drawLayerInfos` | Array | Array of `layerParams` for adding draw layer(s) to map. Layer(s) will always be on the bottom of the graphic layers stack. | false |
 | `layerInfos` | Array | Array of `layerParams` for adding layers to the map and building the controls. | false |
@@ -38,12 +39,14 @@ require(['app/controls/LayerController'], function (LayerController) {
 #### Methods
 
 | Method | Description |
+| --- | --- |
 | `addLayer(layerParams)` | Adds a layer control to the controller. See Layer Parameters for more info. |
 | `addApplicationLayer(layerParams)` | Adds an application (graphics) layer which will always be on the top of the graphic layers stack. See Layer Parameters for more info. |
 
 #### Events
 
 | Event | Description |
+| --- | --- |
 | `add-control` | Returns an object containing the layerParams and the layer control after layer control is added to the controller. |
 | 'add-application` | Returns layer after being added to map. Not working for some reason!? |
 
@@ -61,6 +64,7 @@ An object of options for loading the layer and building the control. All layerPa
 Additional options:
 
 | Option | Description |
+| --- | --- |
 | `layerMenuItems` | Array of [dijit/MenuItem](http://dojotoolkit.org/api/?qs=1.10/dijit/MenuItem) options to be added to layer menu. Add a menu separator with `{separator: 'separator'}`. |
 
 All layer controls extend the layer object with `layerParams`. Add as many custom options as you want. Great for custom identify and query tasks, and the like.
@@ -70,6 +74,7 @@ All layer controls extend the layer object with `layerParams`. Add as many custo
 Required options:
 
 | Option | Description |
+| --- | --- |
 | `url` | The service URL. |
 
 Default mixin:
@@ -90,6 +95,7 @@ Default mixin:
 Additional options:
 
 | Option | Description |
+| --- | --- |
 | `sublayerMenuItems` | Array of [dijit/MenuItem](http://dojotoolkit.org/api/?qs=1.10/dijit/MenuItem) options to be added to sublayer (not folder) menus. Add a menu separator with `{separator: 'separator'}`. |
 
 Notes:
@@ -101,6 +107,7 @@ Notes:
 Required options:
 
 | Option | Description |
+| --- | --- |
 | `url` | The service URL. |
 
 Default mixin:
@@ -121,6 +128,7 @@ Default mixin:
 Required options:
 
 | Option | Description |
+| --- | --- |
 | `url` | The service URL. |
 
 Default mixin:
@@ -140,6 +148,7 @@ Default mixin:
 Required options:
 
 | Option | Description |
+| --- | --- |
 | `urlTemplate` | The URL template. `http://${subDomain}.tile.stamen.com/watercolor/${level}/${col}/${row}.jpg` |
 
 Default mixin:
@@ -180,6 +189,7 @@ Feature layers are complex. I'm still hammering out some details.
 
 * other layers: CSVLayer, GeoRSSLayer, StreamLayer, WMSLayer, WMTSLayer, GeoJSON?, others?
 * minScale and maxScale layerParams and set on layer creation
+* set layer scales menu item(s)
 * time enabled layer menu items
 * layer control serialization method for map saving
 * 10.0 services aren't using min and max scales for checkbox visibility (why?)
