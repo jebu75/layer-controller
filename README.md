@@ -165,6 +165,46 @@ Default mixin:
 }
 ```
 
+#### ArcGIS Feature Layer
+
+Required options:
+
+| Option | Description |
+| --- | --- |
+| `url` | The service URL. |
+
+Default mixin:
+
+```javascript
+{
+    label: 'Please add label option to layerParams',
+    secured: false,
+    token: null,
+    visible: false,
+    opacity: 1,
+    mode: 1,
+    outFields: ['*'],
+    infoTemplate: {
+        type: 'none',
+        title: '',
+        content: ''
+    }
+}
+```
+
+Additional options:
+
+| Option | Description |
+| --- | --- |
+| `mode` | Feature layer mode. Not really optional but defaults to `1` i.e. ONDEMAND. |
+| `infoTemplate` | An object containing options for the layer's InfoTemplate. |
+
+InfoTemplate types:
+
+* `none` The default mixin. Layer's InfoTemplate not set.
+* `custom` Sets `infoTemplate.title` and `infoTemplate.content` as InfoTemplate title and content respectively.
+* `any_other_value` Sets the esri default InfoTemplate (objectid field as title and a table of all attributes as content).
+
 #### Application Layers
 
 `id` option is required.
@@ -178,10 +218,6 @@ Default mixin:
 }
 ```
 
-#### ArcGIS Feature Layer
-
-Feature layers are complex. I'm still hammering out some details.
-
 #### Draw Layers
 
 `id` option is required. There is no default mixin.
@@ -190,7 +226,7 @@ Feature layers are complex. I'm still hammering out some details.
 
 * other layers: CSVLayer, GeoRSSLayer, StreamLayer, WMSLayer, WMTSLayer, GeoJSON?, others?
 * minScale and maxScale layerParams and set on layer creation
-* set layer scales menu item(s)
+* set layer min/max scale menu item(s)
 * time enabled layer menu items
 * layer control serialization method for map saving
 * 10.0 services aren't using min and max scales for checkbox visibility (why?)

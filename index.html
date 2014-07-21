@@ -67,11 +67,17 @@ require([
     //added to controller and map bottom to top
     var layerInfos = [{
         type: 'tiled',
-        label: 'Light Gray (tiled test)',
+        label: 'Light Gray',
         url: 'http://services.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer'
     }, {
+        type: 'webTiled',
+        label: 'Stamen Toner',
+        urlTemplate: 'http://${subDomain}.tile.stamen.com/toner/${level}/${col}/${row}.jpg',
+        subDomains: ['a', 'b', 'c', 'd'],
+        copyright: 'Map tiles by <a href="http://stamen.com">Stamen Design</a>, under <a href="http://creativecommons.org/licenses/by/3.0">CC BY 3.0</a>. Data by <a href="http://openstreetmap.org">OpenStreetMap</a>, under <a href="http://creativecommons.org/licenses/by-sa/3.0">CC BY SA</a>.'
+    }, {
         type: 'dynamic',
-        label: 'FEMA Flood (dynamic test w/ sublayer menus)',
+        label: 'FEMA Flood',
         url: 'http://hazards.fema.gov/gis/nfhl/rest/services/public/NFHL/MapServer',
         sublayerMenuItems: [{
             label: 'Click Me',
@@ -81,19 +87,8 @@ require([
             }
         }]
     }, {
-        type: 'image',
-        label: 'LandsatGLS/FalseColor (image test)',
-        url: 'http://imagery.arcgisonline.com/ArcGIS/rest/services/LandsatGLS/FalseColor/ImageServer',
-        opacity: 0.7
-    }, {
-        type: 'webTiled',
-        label: 'Stamen Toner (web tiled test)',
-        urlTemplate: 'http://${subDomain}.tile.stamen.com/toner/${level}/${col}/${row}.jpg',
-        subDomains: ['a', 'b', 'c', 'd'],
-        copyright: 'Map tiles by <a href="http://stamen.com">Stamen Design</a>, under <a href="http://creativecommons.org/licenses/by/3.0">CC BY 3.0</a>. Data by <a href="http://openstreetmap.org">OpenStreetMap</a>, under <a href="http://creativecommons.org/licenses/by-sa/3.0">CC BY SA</a>.'
-    }, {
         type: 'dynamic',
-        label: 'Oregon Wetlands (layer group test w/ layer menu)',
+        label: 'Oregon Wetlands',
         url: 'http://venison.library.oregonstate.edu/arcgis/rest/services/wetlands/wetlands_restoration_Feb_2014/MapServer',
         layerMenuItems: [{
             label: 'Click Me',
@@ -104,8 +99,26 @@ require([
         }]
     }, {
         type: 'dynamic',
-        label: 'NGS Control (no legend test)',
+        label: 'NGS Control',
         url: 'http://maps1.arcgisonline.com/ArcGIS/rest/services/NGS_Survey_Control_Points/MapServer'
+    }, {
+        type: 'image',
+        label: 'LandsatGLS/FalseColor',
+        url: 'http://imagery.arcgisonline.com/ArcGIS/rest/services/LandsatGLS/FalseColor/ImageServer',
+        opacity: 0.7
+    }, {
+        type: 'feature',
+        label: 'Oregon Farmers Markets',
+        url: 'http://venison.library.oregonstate.edu/arcgis/rest/services/farm/Farmers_Markets_2013/FeatureServer/0',
+        infoTemplate: {
+            type: 'custom',
+            title: '${marketnam}',
+            content: '<div class="popupInfoWrapper">Location: ${location}<br>City: ${city}<br>County: ${county}<br>Season: ${season}<br>Days: ${days}<br>Hours: ${hours}</div>'
+        }
+    }, {
+        type: 'feature',
+        label: 'Oregon Century Farms by County',
+        url: 'http://venison.library.oregonstate.edu/arcgis/rest/services/farm/century_farms/MapServer/1'
     }];
     
     //array of layerParams for adding draw layer(s)
@@ -131,7 +144,7 @@ require([
         map: map, //map reference - required
         drawLayerInfos: drawLayerInfos, //array of draw layer(s)
         layerInfos: layerInfos, //array of layerParams
-        reorder: true, //allow layer reordering - default: false
+        reorder: false, //allow layer reordering - default: false
         basemapCount: 1 //number of basemap layers - default: 0
     }, 'layer-controller');
     layerController.startup();

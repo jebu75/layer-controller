@@ -24,7 +24,7 @@ define([
     var DynamicLayerControl,
         TiledLayerControl,
         ImageLayerControl,
-        //FeatureLayerControl,
+        FeatureLayerControl,
         WebTiledLayerControl;
     
     function loadDLC(layerParams, func) {
@@ -48,12 +48,12 @@ define([
         });
     }
     
-    /*function loadFLC(layerParams, func) {
+    function loadFLC(layerParams, func) {
         require(['app/controls/FeatureLayerControl'], function (x) {
             FeatureLayerControl = x;
             func(layerParams);
         });
-    }*/
+    }
     
     function loadWTLC(layerParams, func) {
         require(['app/controls/WebTiledLayerControl'], function (x) {
@@ -125,6 +125,13 @@ define([
                         loadILC(layerParams, lang.hitch(this, this._addImageLayerControl));
                     }
                     break;
+                case 'feature':
+                    if (FeatureLayerControl) {
+                        this._addFeatureLayerControl(layerParams);
+                    } else {
+                        loadFLC(layerParams, lang.hitch(this, this._addFeatureLayerControl));
+                    }
+                    break;
                 case 'webTiled':
                     if (WebTiledLayerControl) {
                         this._addWebTiledLayerControl(layerParams);
@@ -186,6 +193,16 @@ define([
         //add ags image control
         _addImageLayerControl: function (layerParams) {
             var control = new ImageLayerControl({
+                controller: this,
+                layerParams: layerParams
+            });
+            this.addChild(control, 'first');
+            this.emit('add-control', {layerParams: control.layerParams, control: control});
+        },
+        
+        //add ags feature control
+        _addFeatureLayerControl: function (layerParams) {
+            var control = new FeatureLayerControl({
                 controller: this,
                 layerParams: layerParams
             });
