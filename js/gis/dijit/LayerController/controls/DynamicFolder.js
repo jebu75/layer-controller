@@ -1,6 +1,3 @@
-/*
- * arcgis dynamic map service layer loader and control
- */
 define([
     'dojo/_base/declare',
     'dojo/_base/lang',
@@ -8,10 +5,11 @@ define([
     'dojo/dom-class',
     'dojo/dom-style',
     'dojo/dom-attr',
+    'dojo/html',
     'dijit/_WidgetBase',
     'dijit/_TemplatedMixin',
     'dijit/form/CheckBox',
-    'dojo/text!app/controls/templates/DynamicFolderControl.html'
+    'dojo/text!gis/dijit/LayerController/controls/templates/Folder.html'
 ], function(
     declare,
     lang,
@@ -19,15 +17,15 @@ define([
     domClass,
     domStyle,
     domAttr,
+    html,
     WidgetBase,
     TemplatedMixin,
     CheckBox,
-    dynamicFolderControlTemplate
+    folderTemplate
 ) {
     'use strict';
     return declare([WidgetBase, TemplatedMixin], {
-        //template
-        templateString: dynamicFolderControlTemplate,
+        templateString: folderTemplate,
         
         //options
         control: null,
@@ -39,7 +37,6 @@ define([
         },
         
         postCreate: function() {
-            //create the checkbox and init control
             this.checkbox = new CheckBox({
                 checked: this.folderInfo.defaultVisibility,
                 onChange: lang.hitch(this, function() {
@@ -48,10 +45,8 @@ define([
                 })
             }, this.checkboxNode);
             
-            //layer's label
-            this.labelNode.innerHTML = this.folderInfo.name;
+            html.set(this.labelNode, this.folderInfo.name);
             
-            //toggle expandNode
             on(this.expandClickNode, 'click', lang.hitch(this, function() {
                 var expandNode = this.expandNode,
                     iconNode = this.expandIconNode;
@@ -66,13 +61,11 @@ define([
                 }
             }));
             
-            //check scales and check on map 'zoom-end' if so
             if (this.folderInfo.minScale !== 0 || this.folderInfo.maxScale !== 0) {
                 this._checkboxScaleRange();
-                this.control.map.on('zoom-end', lang.hitch(this, this._checkboxScaleRange));
+                this.control.layer.getMap().on('zoom-end', lang.hitch(this, '_checkboxScaleRange'));
             }
             
-            //element attribute and class for setVisibleLayers
             domAttr.set(this.checkbox.focusNode, 'data-layer-id', this.folderInfo.id);
             domClass.add(this.checkbox.focusNode, this.control.layer.id + '-layer-checkbox');
         },
@@ -81,7 +74,7 @@ define([
         _checkboxScaleRange: function() {
             var node = this.checkbox.domNode,
                 checked = this.checkbox.checked,
-                scale = this.control.map.getScale(),
+                scale = this.control.layer.getMap().getScale(),
                 min = this.folderInfo.minScale,
                 max = this.folderInfo.maxScale,
                 x = 'dijitCheckBoxDisabled',

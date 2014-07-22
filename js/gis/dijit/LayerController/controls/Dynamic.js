@@ -1,6 +1,3 @@
-/*
- * arcgis dynamic map service layer loader and control
- */
 define([
     'dojo/_base/declare',
     'dojo/_base/lang',
@@ -11,6 +8,7 @@ define([
     'dojo/dom-style',
     'dojo/dom-construct',
     'dojo/dom-attr',
+    'dojo/html',
     'dijit/registry',
     'dijit/_WidgetBase',
     'dijit/_TemplatedMixin',
@@ -23,16 +21,11 @@ define([
     'dijit/form/CheckBox',
     'dijit/form/HorizontalSlider',
     'dijit/form/HorizontalRuleLabels',
-    'esri/layers/ImageParameters',
     'esri/layers/ArcGISDynamicMapServiceLayer',
     'esri/request',
-    'esri/tasks/ProjectParameters',
-    'esri/config',
-    'app/controls/DynamicSublayerControl',
-    'app/controls/DynamicFolderControl',
-    'dojo/text!app/controls/templates/LayerControl.html',
-    //the css
-    'xstyle/css!app/controls/css/LayerControl.css'
+    'gis/dijit/LayerController/controls/DynamicSublayer',
+    'gis/dijit/LayerController/controls/DynamicFolder',
+    'dojo/text!gis/dijit/LayerController/controls/templates/Control.html'
 ], function (
     declare,
     lang,
@@ -43,6 +36,7 @@ define([
     domStyle,
     domConst,
     domAttr,
+    html,
     registry,
     WidgetBase,
     TemplatedMixin,
@@ -55,105 +49,71 @@ define([
     CheckBox,
     HorizontalSlider,
     HorizontalRuleLabels,
-    ImageParameters,
     ArcGISDynamicMapServiceLayer,
     esriRequest,
-    ProjectParameters,
-    esriConfig,
-    SublayerControl,
-    FolderControl,
-    layerControlTemplate
+    DynamicSublayer,
+    DynamicFolder,
+    controlTemplate
 ) {
     'use strict';
     return declare([WidgetBase, TemplatedMixin, Contained], {
-        //template
-        templateString: layerControlTemplate,
+        templateString: controlTemplate,
         
         //for reoredering
         _layerType: 'overlay',
         
         //options
         controller: null,
-        map: null,
-        layerParams: null,
+        params: null,
         
         constructor: function(options) {
             options = options || {};
             lang.mixin(this, options);
-            if (this.controller) {
-                this.map = this.controller.map;
-            }
         },
         
-        //validate and initialize
         postCreate: function() {
-            if (!this.layerParams) {
-                console.log('DynamicLayerControl error::layerParams option is required');
+            if (!this.params) {
+                console.log('Dynamic error::params option is required');
                 this.destroy();
                 return;
             }
-            if (!this.map) {
-                console.log('DynamicLayerControl error::map option is required');
+            if (!this.params.url) {
+                console.log('Dynamic error::params.url option is required');
                 this.destroy();
                 return;
             }
-            this._initialize(this.layerParams, this.map);
+            if (!this.controller) {
+                console.log('Dynamic error::controller option is required');
+                this.destroy();
+                return;
+            }
+            this._initialize(this.params, this.controller.map);
         },
         
         //add layer and init control
-        _initialize: function(layerParams, map) {
-            //mixin defaults
-            var lp = lang.mixin({
-                label: 'Please add label option to layerParams',
-                secured: false,
-                token: null,
-                visible: false,
-                opacity: 1,
-                imageFormat: 'png32',
-                dpi: 96,
-                sublayers: true,
-                components: {
-                    zoomToLayer: true,
-                    transparency: true,
-                    scales: true
-                }
-            }, layerParams);
-            this.layerParams = lp;
+        _initialize: function(params, map) {
             
-            //the layer
-            this.layer = new ArcGISDynamicMapServiceLayer((lp.secured) ? lp.url + '?token=' + lp.token : lp.url, {
-                id: lp.id || null,
-                imageParameters: lang.mixin(new ImageParameters(), {format: lp.imageFormat, dpi: lp.dpi}),
-                visible: lp.visible,
-                opacity: lp.opacity
-            });
+            var layerOptions = params.layerOptions || {visibile: false},
+                token = params.token || null;
+            
+            this.layer = new ArcGISDynamicMapServiceLayer((token) ? params.url + '?token=' + token : params.url, layerOptions);
             
             //reset url if secured
-            if (lp.secured) {
-                this.layer.url = lp.url;
+            if (token) {
+                this.layer.url = params.url;
             }
             
-            //add the layer
             map.addLayer(this.layer);
             
-            //if a layer id wasn't provided add map generated id to layerParams
-            if (!lp.id) {
-                lp.id = this.layer.id;
-            }
+            lang.mixin(this.layer, params.layerExtend || {});
             
-            //extend the layer with layerParams
-            this.layer.layerParams = lp;
-            
-            //the layer visibility checkbox
             this.checkbox = new CheckBox({
-                checked: lp.visible,
-                onChange: lang.hitch(this, this._toggleLayer)
+                checked: layerOptions.visible,
+                onChange: lang.hitch(this, '_toggleLayer')
             }, this.checkboxNode);
             
-            //layer label
-            this.labelNode.innerHTML = lp.label;
+            html.set(this.labelNode, params.title || 'Unknown Layer');
             
-            //show hide layer updating indicator
             this.layer.on('update-start', lang.hitch(this, function() {
                 domStyle.set(this.layerUpdateNode, 'display', 'inline-block'); //font awesome display
             }));
@@ -161,29 +121,8 @@ define([
                 domStyle.set(this.layerUpdateNode, 'display', 'none');
             }));
             
-            //needs a loaded layer
-            this.layer.on('load', lang.hitch(this, function() {
-                //check scales and check on map 'zoom-in' if so
-                if (this.layer.minScale !== 0 || this.layer.maxScale !== 0) {
-                    this._checkboxScaleRange();
-                    map.on('zoom-end', lang.hitch(this, this._checkboxScaleRange));
-                }
-            }));
-            
-            //initiate scale changing
-            // NOT USED YET - need to create scale setting in menu
-            this.layer.on('scale-range-change', lang.hitch(this, function() {
-                if (this.layer.minScale !== 0 || this.layer.maxScale !== 0) {
-                    this._checkboxScaleRange();
-                    map.on('zoom-end', lang.hitch(this, this._checkboxScaleRange));
-                } else {
-                    this._checkboxScaleRange();
-                }
-            }));
-            
-            //create sublayers or destroy expandNode and expand toggle icon
-            //either way create layer menu
-            if (lp.sublayers) {
+            var sublayers = params.controlOptions.sublayers || true;
+            if (sublayers) {
                 on(this.expandClickNode, 'click', lang.hitch(this, function() {
                     var expandNode = this.expandNode,
                         iconNode = this.expandIconNode;
@@ -197,7 +136,13 @@ define([
                 }));
                 this.layer.on('load', lang.hitch(this, function() {
                     this._layerMenu();
+                    
                     this._sublayers();
+                    
+                    if (this.layer.minScale !== 0 || this.layer.maxScale !== 0) {
+                        this._checkboxScaleRange();
+                        map.on('zoom-end', lang.hitch(this, '_checkboxScaleRange'));
+                    }
                 }));
             } else {
                 domClass.remove(this.expandIconNode, ['fa', 'fa-plus-square-o', 'layerControlToggleIcon']);
@@ -205,7 +150,30 @@ define([
                 domConst.destroy(this.expandNode);
                 this.layer.on('load', lang.hitch(this, function() {
                     this._layerMenu();
+                    
+                    if (this.layer.minScale !== 0 || this.layer.maxScale !== 0) {
+                        this._checkboxScaleRange();
+                        map.on('zoom-end', lang.hitch(this, '_checkboxScaleRange'));
+                    }
                 }));
+            }
+            
+            this.layer.on('scale-range-change', lang.hitch(this, function() {
+                if (this.layer.minScale !== 0 || this.layer.maxScale !== 0) {
+                    this._checkboxScaleRange();
+                    map.on('zoom-end', lang.hitch(this, '_checkboxScaleRange'));
+                } else {
+                    this._checkboxScaleRange();
+                }
+            }));
+            
+            var minScale = params.minScale,
+                maxScale = params.maxScale;
+            if (minScale || minScale === 0) {
+                this.layer.setMinScale(minScale);
+            }
+            if (maxScale || maxScale === 0) {
+                this.layer.setMaxScale(maxScale);
             }
         },
         
@@ -220,7 +188,7 @@ define([
                         control;
                     if (pid === -1 && slids === null) {
                         //it's a top level sublayer
-                        control = new SublayerControl({
+                        control = new DynamicSublayer({
                             id: controlId,
                             control: this,
                             sublayerInfo: info
@@ -229,7 +197,7 @@ define([
                         domConst.place(control.domNode, this.expandNode, 'last');
                     } else if (pid === -1 && slids !== null) {
                         //it's a top level folder
-                        control = new FolderControl({
+                        control = new DynamicFolder({
                             id: controlId,
                             control: this,
                             folderInfo: info
@@ -238,7 +206,7 @@ define([
                         domConst.place(control.domNode, this.expandNode, 'last');
                     } else if (pid !== -1 && slids !== null) {
                         //it's a nested folder
-                        control = new FolderControl({
+                        control = new DynamicFolder({
                             id: controlId,
                             control: this,
                             folderInfo: info
@@ -247,7 +215,7 @@ define([
                         domConst.place(control.domNode, registry.byId(this.layer.id + '-' + info.parentLayerId + '-sublayer-control').expandNode, 'last');
                     } else if (pid !== -1 && slids === null) {
                         //it's a nested sublayer
-                        control = new SublayerControl({
+                        control = new DynamicSublayer({
                             id: controlId,
                             control: this,
                             sublayerInfo: info
@@ -259,6 +227,7 @@ define([
             }
             
             //check ags version and create legends
+            //perhaps check in _legend and use arcgis legend helper?
             if (this.layer.version >= 10.01) {
                 this._legend(this.layer);
             }
@@ -272,12 +241,12 @@ define([
                 leftClickToOpen: true
             });
             var menu = this._layerMenu,
-                lp = this.layerParams,
+                params = this.params,
                 layer = this.layer,
                 controller = this.controller;
             
             //add custom menu items
-            var layerMenuItems = lp.layerMenuItems;
+            var layerMenuItems = params.controlOptions.layerMenuItems;
             if (layerMenuItems && layerMenuItems.length) {
                 arrayUtil.forEach(layerMenuItems, function (item) {
                     if (item.separator && item.separator === 'separator') {
@@ -290,7 +259,7 @@ define([
             }
             
             //check for single layer and if so add sublayerMenuItems
-            var sublayerMenuItems = lp.sublayerMenuItems;
+            var sublayerMenuItems = params.controlOptions.sublayerMenuItems;
             if (layer.layerInfos.length === 1 && sublayerMenuItems && sublayerMenuItems.length) {
                 arrayUtil.forEach(sublayerMenuItems, function (item) {
                     if (item.separator && item.separator === 'separator') {
@@ -303,7 +272,7 @@ define([
             }
             
             //add move up and down if in a controller and reorder = true
-            if (controller && controller.reorder) {
+            if (controller.reorder) {
                 menu.addChild(new MenuItem({
                     label: 'Move Up',
                     onClick: lang.hitch(this, function() {
@@ -323,20 +292,20 @@ define([
             menu.addChild(new MenuItem({
                 label: 'Zoom to Layer',
                 onClick: lang.hitch(this, function() {
-                    this._zoomToLayer();
+                    this.controller._zoomToLayer(this.layer);
                 })
             }));
             
             //layer transparency
             var transparencySlider = new HorizontalSlider({
-                value: lp.opacity || 1,
+                value: layer.opacity,
                 minimum: 0,
                 maximum: 1,
                 discreteValues: 11,
                 showButtons: true,
                 onChange: function(value) {
                     layer.setOpacity(value);
-                    arrayUtil.forEach(query('.' + lp.id + '-layerLegendImage'), function(img) {
+                    arrayUtil.forEach(query('.' + layer.id + '-layerLegendImage'), function(img) {
                         domStyle.set(img, 'opacity', value);
                     });
                 }
@@ -357,11 +326,6 @@ define([
                 label: 'Transparency',
                 popup: transparencyTooltip
             }));
-            
-            //layer min/max scales
-            //if (lp.components.scales === true) {
-            //    
-            //}
             
             //and done
             menu.startup();
@@ -384,41 +348,36 @@ define([
                     var legendContent = '<table class="' + layer.id + '-' + _layer.layerId + '-legend layerControlLegendTable">';
                     arrayUtil.forEach(_layer.legend, function(legend) {
                         var label = legend.label || '&nbsp;';
-                        legendContent += '<tr><td><img class="' + layer.id + '-layerLegendImage layerControlLegendImage" style="width:' + legend.width + ';height:' + legend.height + ';" src="data:' + legend.contentType + ';base64,' + legend.imageData + '" alt="' + label + '" /></td><td>' + label + '</td></tr>';
+                        legendContent += '<tr><td><img class="' + layer.id + '-layerLegendImage layerControlLegendImage" style="opacity:' + layer.opacity + ';width:' + legend.width + ';height:' + legend.height + ';" src="data:' + legend.contentType + ';base64,' + legend.imageData + '" alt="' + label + '" /></td><td>' + label + '</td></tr>';
                     }, this);
                     legendContent += '</table>';
                     
                     //check for single layer
                     //if so use expandNode for legend
                     if (layer.layerInfos.length > 1) {
-                        registry.byId(layer.id + '-' + _layer.layerId + '-sublayer-control').expandNode.innerHTML = legendContent;
+                        html.set(registry.byId(layer.id + '-' + _layer.layerId + '-sublayer-control').expandNode, legendContent);
                     } else {
-                        this.expandNode.innerHTML = legendContent;
+                        html.set(this.expandNode, legendContent);
                     }
-                }, this);
-                
-                //set opacity per layer.opacity
-                arrayUtil.forEach(query('.' + layer.id + '-layerLegendImage'), function(img) {
-                    domStyle.set(img, 'opacity', layer.opacity);
                 }, this);
             }), lang.hitch(this, function(e) {
                 console.log(e);
-                console.log('DynamicLayerControl::an error occurred retrieving legend');
+                console.log('Dynamic::an error occurred retrieving legend');
                 if (this.layer.layerInfos.length === 1) {
-                    this.expandNode.innerHTML = 'No Legend';
+                    html.set(this.expandNode, 'No Legend');
                 }
             }));  
         },
         
         //toggle layer visibility
         _toggleLayer: function() {
-            var l = this.layer;
-            if (l.visible) {
-                l.hide();
+            var layer = this.layer;
+            if (layer.visible) {
+                layer.hide();
             } else {
-                l.show();
+                layer.show();
             }
-            if (l.minScale !== 0 || l.maxScale !== 0) {
+            if (layer.minScale !== 0 || layer.maxScale !== 0) {
                 this._checkboxScaleRange();
             }
         },
@@ -428,13 +387,14 @@ define([
             //because ags doesn't respect a layer group's visibility
             //i.e. layer 3 (the group) is off but it's sublayers still show
             //so check and if group is off also remove the sublayers
-            var setLayers = [];
-            arrayUtil.forEach(query('.' + this.layer.id + '-layer-checkbox'), function(i) {
+            var layer = this.layer,
+                setLayers = [];
+            arrayUtil.forEach(query('.' + layer.id + '-layer-checkbox'), function(i) {
                 if (i.checked) {
                     setLayers.push(parseInt(domAttr.get(i, 'data-layer-id'), 10));
                 }
             }, this);
-            arrayUtil.forEach(this.layer.layerInfos, function(info) {
+            arrayUtil.forEach(layer.layerInfos, function(info) {
                 if (info.subLayerIds !== null && arrayUtil.indexOf(setLayers, info.id) === -1) {
                     arrayUtil.forEach(info.subLayerIds, function(sub) {
                         if (arrayUtil.indexOf(setLayers, sub) !== -1) {
@@ -446,11 +406,11 @@ define([
                 }
             }, this);
             if (setLayers.length) {
-                this.layer.setVisibleLayers(setLayers);
-                this.layer.refresh();
+                layer.setVisibleLayers(setLayers);
+                layer.refresh();
             } else {
-                this.layer.setVisibleLayers([-1]);
-                this.layer.refresh();
+                layer.setVisibleLayers([-1]);
+                layer.refresh();
             }
         },
         
@@ -458,9 +418,10 @@ define([
         _checkboxScaleRange: function() {
             var node = this.checkbox.domNode,
                 checked = this.checkbox.checked,
-                scale = this.controller.map.getScale(),
-                min = this.layer.minScale,
-                max = this.layer.maxScale,
+                layer = this.layer,
+                scale = layer.getMap.getScale(),
+                min = layer.minScale,
+                max = layer.maxScale,
                 x = 'dijitCheckBoxDisabled',
                 y = 'dijitCheckBoxCheckedDisabled';
             domClass.remove(node, [x, y]);
@@ -476,28 +437,6 @@ define([
                     domClass.add(node, y);
                 } else {
                     domClass.add(node, x);
-                }
-            }
-        },
-        
-        //zoom to layer
-        _zoomToLayer: function() {
-            var layer = this.layer,
-                map = this.map;
-            if (layer.spatialReference === map.spatialReference) {
-                map.setExtent(layer.fullExtent, true);
-            } else {
-                if (esriConfig.defaults.geometryService) {
-                    esriConfig.defaults.geometryService.project(lang.mixin(new ProjectParameters(), {
-                        geometries: [layer.fullExtent],
-                        outSR: map.spatialReference
-                    }), function(r) {
-                        map.setExtent(r[0], true);
-                    }, function(e) {
-                        console.log(e);
-                    });
-                } else {
-                    console.log('DynamicLayerControl _zoomToLayer::esriConfig.defaults.geometryService is not set');
                 }
             }
         }

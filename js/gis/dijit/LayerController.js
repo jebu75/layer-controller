@@ -1,161 +1,181 @@
-/*
- * a container widget for layer controls
- */
+/* layer controller */
 define([
     'dojo/_base/declare',
     'dojo/_base/array',
     'dojo/_base/lang',
+    'dojo/dom-construct',
+    'dojo/dom-class',
     'dijit/_WidgetBase',
     'dijit/_Container',
     'dojo/Evented',
-    'esri/layers/GraphicsLayer'
-], function(
+    'esri/layers/GraphicsLayer',
+    'esri/tasks/ProjectParameters',
+    'esri/config',
+    //the css
+    'xstyle/css!gis/dijit/LayerController/css/LayerController.css'
+], function (
     declare,
     arrayUtil,
     lang,
+    domConst,
+    domClass,
     WidgetBase,
     Container,
     Evented,
-    GraphicsLayer
+    GraphicsLayer,
+    ProjectParameters,
+    esriConfig
 ) {
     'use strict';
-    
-    //only load layer controls as needed via nested requires
-    
-    
-    function loadDLC(layerParams, func) {
-        require(['app/controls/DynamicLayerControl'], function (x) {
-            DynamicLayerControl = x;
-            func(layerParams);
-        });
-    }
-    
-    function loadTLC(layerParams, func) {
-        require(['app/controls/TiledLayerControl'], function (x) {
-            TiledLayerControl = x;
-            func(layerParams);
-        });
-    }
-    
-    function loadILC(layerParams, func) {
-        require(['app/controls/ImageLayerControl'], function (x) {
-            ImageLayerControl = x;
-            func(layerParams);
-        });
-    }
-    
-    function loadFLC(layerParams, func) {
-        require(['app/controls/FeatureLayerControl'], function (x) {
-            FeatureLayerControl = x;
-            func(layerParams);
-        });
-    }
-    
-    function loadWTLC(layerParams, func) {
-        require(['app/controls/WebTiledLayerControl'], function (x) {
-            WebTiledLayerControl = x;
-            func(layerParams);
-        });
-    }
-    
     return declare([WidgetBase, Container, Evented], {
         //options
-        map: null, //reference to the map
-        layerInfos: [], //array of layerParams
-        drawLayerInfos: [], //array of draw layer(s)
-        reorder: false, //allow layer reordering
-        basemapCount: 0, //number of basemaps
-        //private properties
-        _layerControls: {
-            dynamic: 'app/controls/DynamicLayerControl',
-            feature: 'app/controls/FeatureLayerControl',
-            image: 'app/controls/ImageLayerControl',
-            tiled: 'app/controls/TiledLayerControl',
-            webTiled: 'app/controls/WebTiledLayerControl'
+        map: null,
+        operationalLayers: [],
+        applicationLayers: {
+            top: [],
+            bottom: []
         },
-        _drawLayers: [], //draw (keep on bottom) layers
-        _applicationLayers: [], //application (keep on top) layers
+        components: [],
+        reorder: false,
+        basemapCount: 0,
+        
+        //private properties
+        _vectorContainer: null,
+        _overlayContainer: null,
+        _layerControls: {
+            dynamic: 'gis/dijit/LayerController/controls/Dynamic',
+            feature: 'gis/dijit/LayerController/controls/Feature',
+            image: 'gis/dijit/LayerController/controls/Image',
+            tiled: 'gis/dijit/LayerController/controls/Tiled',
+            webTiled: 'gis/dijit/LayerController/controls/WebTiled'
+        },
+        _components: {
+            Scales: 'gis/dijit/LayerController/components/Scales',
+            Transparency: 'gis/dijit/LayerController/components/Transparency',
+            Interval: 'gis/dijit/LayerController/components/Interval'
+        },
+        _applicationLayers: [],
+        
         constructor: function(options) {
             options = options || {};
+            
             if (!options.map) {
                 console.log('LayerController error::map option is required');
                 return;
             }
+            
             lang.mixin(this, options);
         },
         
         postCreate: function() {
-            //reorder application layers to the top on 'layer-add'
-            this.map.on('layer-add', lang.hitch(this, this._reorderApplicationLayers));
+            var ControlContainer = declare([WidgetBase, Container]);
             
-            //add draw layer(s)
-            //layer(s) will always be below all other vector layers
-            if (this.drawLayerInfos.length) {
-                this._addDrawLayers();
+            this._vectorContainer = new ControlContainer({
+                map: this.map
+            }, domConst.create('div'));
+            this.addChild(this._vectorContainer, 'first');
+            //add .vectorLayerContainer
+            
+            this._overlayContainer = new ControlContainer({
+                map: this.map
+            }, domConst.create('div'));
+            this.addChild(this._overlayContainer, 'last');
+            //add .overlayLayerContainer
+            
+            //reorder top application layers
+            this.map.on('layer-add', lang.hitch(this, function () {
+                
+            }));
+            
+            if (this.applicationLayers.bottom.length) {
+                arrayUtil.forEach(this.applicationLayers.bottom, function (appLayer) {
+                    this.addApplicationLayer(appLayer, 'bottom');
+                }, this);
             }
             
             var modules = [];
             
-            arrayUtil.forEach(this.layerInfos, function(layerParams) {
-                var control = this._layerControls[layerParams.type];
-                if (control) {
-                    modules.push(control);
+            arrayUtil.forEach(this.components, function(component) {
+                var mod = this._components[component];
+                if (mod) {
+                    modules.push(mod);
                 } else {
-                    console.log('LayerController error::the layer type "' + layerParams.type + '" is not valid');
+                    console.log('LayerController error::the component "' + component + '" is not valid');
+                }
+            }, this);
+            
+            arrayUtil.forEach(this.operationalLayers, function(opLayer) {
+                var mod = this._layerControls[opLayer.type];
+                if (mod) {
+                    modules.push(mod);
+                } else {
+                    console.log('LayerController error::the layer type "' + opLayer.type + '" is not valid');
                 }
             }, this);
             
             require(modules, lang.hitch(this, function() {
-                arrayUtil.forEach(this.layerInfos, function(layerParams) {
-                    var control = this._layerControls[layerParams.type];
+                arrayUtil.forEach(this.operationalLayers, function(opLayer) {
+                    var control = this._layerControls[opLayer.type];
                     if (control) {
-                        require([control], lang.hitch(this, '_addControl', layerParams));
+                        require([control], lang.hitch(this, '_addControl', opLayer));
                     }
                 }, this);
+                
+                if (this.applicationLayers.top.length) {
+                    arrayUtil.forEach(this.applicationLayers.top, function (appLayer) {
+                        this.addApplicationLayer(appLayer, 'top');
+                    }, this);
+                }
             }));
         },
         
-        _addControl: function (layerParams, LayerControl) {
+        _addControl: function (opLayer, LayerControl) {
             var layerControl = new LayerControl({
                 controller: this,
-                layerParams: layerParams
+                params: opLayer
             });
             layerControl.startup();
-            this.addChild(layerControl, 'first');
+            
+            if (layerControl._layerType === 'overlay') {
+                this._overlayContainer.addChild(layerControl, 'first');
+            } else {
+                this._vectorContainer.addChild(layerControl, 'first');
+            }
+            
             this.emit('control-add', {
-                layerParams: layerControl.layerParams,
+                layerId: layerControl.layer.id,
                 layerControlId: layerControl.id
             });
         },
         
-        //adds the appropriate layer control
-        //@param layerParams {Object} params for the layer and control
-        addControl: function(layerParams) {
-            
+        addControl: function(opLayer) {
+            var control = this._layerControls[opLayer.type];
+            if (control) {
+                require([control], lang.hitch(this, '_addControl', opLayer));
+            } else {
+                console.log('LayerController error::the layer type "' + opLayer.type + '" is not valid');
+            }
         },
         
-        //add always on top graphics layer
-        //@param layerParams {Object} params for the layer
-        addApplicationLayer: function (layerParams) {
-            if (!layerParams.id) {
-                console.log('LayerController error::id property is required for application layers');
-            }
-            var lp = lang.mixin({
-                visible: true,
-                print: false
-            }, layerParams);
-            var layer = new GraphicsLayer({
-                id: lp.id,
-                visible: lp.visible
-            });
-            layer.layerParams = lp;
-            this.map.addLayer(layer, 0);
-            this._applicationLayers.push(layer);
+        addApplicationLayer: function (appLayer, position) {
+            appLayer = appLayer || {layerOptions: {}};
             
-            //why isn't this working???
-            //console.log(layer);
-            this.emit('add-application', {layer: layer});
-            //console.log(layer);
+            if (!appLayer.layerOptions.id) {
+                console.log('LayerController error::layerOptions.id property is required for application layers');
+                return;
+            }
+            
+            var layer = new GraphicsLayer(appLayer.layerOptions);
+            
+            var layerExtend = appLayer.layerExtend || {};
+            layerExtend._position = position;
+            lang.mixin(layer, layerExtend);
+            
+            var index = (appLayer.position === 'bottom') ? 0 : this.map.graphicsLayerIds.length;
+            
+            this.map.addLayer(layer, index);
+            
+            this._applicationLayers.push(layer);
         },
         
         //move control up in controller and layer up in map
@@ -201,25 +221,25 @@ define([
             }
         },
         
-        //reorders application layers to top on layer add
-        _reorderApplicationLayers: function() {
-            arrayUtil.forEach(this._applicationLayers, function(appLayer) {
-                this.map.reorderLayer(appLayer, this.map.graphicsLayerIds.length - 1);
-            }, this);
-        },
-        
-        //add draw layer(s) to map
-        _addDrawLayers: function() {
-            arrayUtil.forEach(this.drawLayerInfos, function (layerParams) {
-                if (layerParams.id) {
-                    var layer = new GraphicsLayer({id: layerParams.id});
-                    layer.layerParams = layerParams;
-                    this.map.addLayer(layer);
-                    this._drawLayers.push(layer);
+        //zoom to layer
+        _zoomToLayer: function(layer) {
+            var map = this.map;
+            if (layer.spatialReference === map.spatialReference) {
+                map.setExtent(layer.fullExtent, true);
+            } else {
+                if (esriConfig.defaults.geometryService) {
+                    esriConfig.defaults.geometryService.project(lang.mixin(new ProjectParameters(), {
+                        geometries: [layer.fullExtent],
+                        outSR: map.spatialReference
+                    }), function(r) {
+                        map.setExtent(r[0], true);
+                    }, function(e) {
+                        console.log(e);
+                    });
                 } else {
-                    console.log('LayerController error::id property is required for draw layers');
+                    console.log('LayerController _zoomToLayer::esriConfig.defaults.geometryService is not set');
                 }
-            }, this);
+            }
         }
     });
 });

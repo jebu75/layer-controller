@@ -1,8 +1,14 @@
-/*
- * layer control css
- */
- 
-/* .layerControl {} */
+.vectorLayerContainer {
+
+}
+
+.overlayLayerContainer {
+
+}
+
+.layerControl {
+    /* layer control base class */
+}
 
 .layerControlTable {
     width: 100%;
