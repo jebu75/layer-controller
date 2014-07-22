@@ -21,11 +21,7 @@ define([
     'use strict';
     
     //only load layer controls as needed via nested requires
-    var DynamicLayerControl,
-        TiledLayerControl,
-        ImageLayerControl,
-        FeatureLayerControl,
-        WebTiledLayerControl;
+    
     
     function loadDLC(layerParams, func) {
         require(['app/controls/DynamicLayerControl'], function (x) {
@@ -70,9 +66,15 @@ define([
         reorder: false, //allow layer reordering
         basemapCount: 0, //number of basemaps
         //private properties
+        _layerControls: {
+            dynamic: 'app/controls/DynamicLayerControl',
+            feature: 'app/controls/FeatureLayerControl',
+            image: 'app/controls/ImageLayerControl',
+            tiled: 'app/controls/TiledLayerControl',
+            webTiled: 'app/controls/WebTiledLayerControl'
+        },
         _drawLayers: [], //draw (keep on bottom) layers
         _applicationLayers: [], //application (keep on top) layers
-        
         constructor: function(options) {
             options = options || {};
             if (!options.map) {
@@ -92,57 +94,44 @@ define([
                 this._addDrawLayers();
             }
             
-            //add layer controls
-            if (this.layerInfos.length) {
-                arrayUtil.forEach(this.layerInfos, function (layerParams) {
-                    this.addControl(layerParams);
+            var modules = [];
+            
+            arrayUtil.forEach(this.layerInfos, function(layerParams) {
+                var control = this._layerControls[layerParams.type];
+                if (control) {
+                    modules.push(control);
+                } else {
+                    console.log('LayerController error::the layer type "' + layerParams.type + '" is not valid');
+                }
+            }, this);
+            
+            require(modules, lang.hitch(this, function() {
+                arrayUtil.forEach(this.layerInfos, function(layerParams) {
+                    var control = this._layerControls[layerParams.type];
+                    if (control) {
+                        require([control], lang.hitch(this, '_addControl', layerParams));
+                    }
                 }, this);
-            }
+            }));
+        },
+        
+        _addControl: function (layerParams, LayerControl) {
+            var layerControl = new LayerControl({
+                controller: this,
+                layerParams: layerParams
+            });
+            layerControl.startup();
+            this.addChild(layerControl, 'first');
+            this.emit('control-add', {
+                layerParams: layerControl.layerParams,
+                layerControlId: layerControl.id
+            });
         },
         
         //adds the appropriate layer control
         //@param layerParams {Object} params for the layer and control
         addControl: function(layerParams) {
-            switch (layerParams.type) {
-                case 'dynamic':
-                    if (DynamicLayerControl) {
-                        this._addDynamicLayerControl(layerParams);
-                    } else {
-                        loadDLC(layerParams, lang.hitch(this, this._addDynamicLayerControl));
-                    }
-                    break;
-                case 'tiled':
-                    if (TiledLayerControl) {
-                        this._addTiledLayerControl(layerParams);
-                    } else {
-                        loadTLC(layerParams, lang.hitch(this, this._addTiledLayerControl));
-                    }
-                    break;
-                case 'image':
-                    if (ImageLayerControl) {
-                        this._addImageLayerControl(layerParams);
-                    } else {
-                        loadILC(layerParams, lang.hitch(this, this._addImageLayerControl));
-                    }
-                    break;
-                case 'feature':
-                    if (FeatureLayerControl) {
-                        this._addFeatureLayerControl(layerParams);
-                    } else {
-                        loadFLC(layerParams, lang.hitch(this, this._addFeatureLayerControl));
-                    }
-                    break;
-                case 'webTiled':
-                    if (WebTiledLayerControl) {
-                        this._addWebTiledLayerControl(layerParams);
-                    } else {
-                        loadWTLC(layerParams, lang.hitch(this, this._addWebTiledLayerControl));
-                    }
-                    break;
-                default:
-                    console.log('LayerController error::the layer type "' + layerParams.type + '" is not valid');
-                    break;
-            }
+            
         },
         
         //add always on top graphics layer
@@ -167,57 +156,6 @@ define([
             //console.log(layer);
             this.emit('add-application', {layer: layer});
             //console.log(layer);
-        },
-        
-        //add ags dynamic layer
-        _addDynamicLayerControl: function (layerParams) {
-            var control = new DynamicLayerControl({
-                controller: this,
-                layerParams: layerParams
-            });
-            control.startup();
-            this.addChild(control, 'first');
-            this.emit('add-control', {layerParams: control.layerParams, control: control});
-        },
-        
-        //add ags tiled control
-        _addTiledLayerControl: function (layerParams) {
-            var control = new TiledLayerControl({
-                controller: this,
-                layerParams: layerParams
-            });
-            this.addChild(control, 'first');
-            this.emit('add-control', {layerParams: control.layerParams, control: control});
-        },
-        
-        //add ags image control
-        _addImageLayerControl: function (layerParams) {
-            var control = new ImageLayerControl({
-                controller: this,
-                layerParams: layerParams
-            });
-            this.addChild(control, 'first');
-            this.emit('add-control', {layerParams: control.layerParams, control: control});
-        },
-        
-        //add ags feature control
-        _addFeatureLayerControl: function (layerParams) {
-            var control = new FeatureLayerControl({
-                controller: this,
-                layerParams: layerParams
-            });
-            this.addChild(control, 'first');
-            this.emit('add-control', {layerParams: control.layerParams, control: control});
-        },
-        
-        //add web tiled control
-        _addWebTiledLayerControl: function (layerParams) {
-            var control = new WebTiledLayerControl({
-                controller: this,
-                layerParams: layerParams
-            });
-            this.addChild(control, 'first');
-            this.emit('add-control', {layerParams: control.layerParams, control: control});
         },
         
         //move control up in controller and layer up in map

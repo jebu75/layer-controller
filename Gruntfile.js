@@ -2,7 +2,7 @@ module.exports = function (grunt) {
     grunt.initConfig({
         jshint: {
             build: {
-                src: ['js/**/*.js'],
+                src: ['js/gis/**/*.js'],
                 options: {
                     jshintrc: '.jshintrc',
                     reporter: require('jshint-stylish')
@@ -11,7 +11,7 @@ module.exports = function (grunt) {
         },
         watch: {
             dev: {
-                files: ['js/**'],
+                files: ['js/gis/**'],
                 tasks: ['jshint']
             }
         }

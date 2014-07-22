@@ -33,7 +33,7 @@ define([
     'dojo/text!app/controls/templates/LayerControl.html',
     //the css
     'xstyle/css!app/controls/css/LayerControl.css'
-], function(
+], function (
     declare,
     lang,
     arrayUtil,
@@ -85,8 +85,8 @@ define([
             }
         },
         
+        //validate and initialize
         postCreate: function() {
-            //validate
             if (!this.layerParams) {
                 console.log('DynamicLayerControl error::layerParams option is required');
                 this.destroy();
@@ -97,8 +97,6 @@ define([
                 this.destroy();
                 return;
             }
-            
-            //go!
             this._initialize(this.layerParams, this.map);
         },
         
@@ -113,7 +111,12 @@ define([
                 opacity: 1,
                 imageFormat: 'png32',
                 dpi: 96,
-                sublayers: true
+                sublayers: true,
+                components: {
+                    zoomToLayer: true,
+                    transparency: true,
+                    scales: true
+                }
             }, layerParams);
             this.layerParams = lp;
             
@@ -181,22 +184,17 @@ define([
             //create sublayers or destroy expandNode and expand toggle icon
             //either way create layer menu
             if (lp.sublayers) {
-                //toggle expandNode
                 on(this.expandClickNode, 'click', lang.hitch(this, function() {
                     var expandNode = this.expandNode,
                         iconNode = this.expandIconNode;
                     if (domStyle.get(expandNode, 'display') === 'none') {
                         domStyle.set(expandNode, 'display', 'block');
-                        domClass.remove(iconNode, 'fa-plus-square-o');
-                        domClass.add(iconNode, 'fa-minus-square-o');
+                        domClass.replace(iconNode, 'fa-minus-square-o', 'fa-plus-square-o');
                     } else {
                         domStyle.set(expandNode, 'display', 'none');
-                        domClass.remove(iconNode, 'fa-minus-square-o');
-                        domClass.add(iconNode, 'fa-plus-square-o');
+                        domClass.replace(iconNode, 'fa-plus-square-o', 'fa-minus-square-o');
                     }
                 }));
-                
-                //need a loaded layer
                 this.layer.on('load', lang.hitch(this, function() {
                     this._layerMenu();
                     this._sublayers();
@@ -205,8 +203,6 @@ define([
                 domClass.remove(this.expandIconNode, ['fa', 'fa-plus-square-o', 'layerControlToggleIcon']);
                 domStyle.set(this.expandIconNode, 'cursor', 'default');
                 domConst.destroy(this.expandNode);
-                
-                //need a loaded layer
                 this.layer.on('load', lang.hitch(this, function() {
                     this._layerMenu();
                 }));
@@ -215,8 +211,7 @@ define([
         
         //add folder/sublayer controls per layer.layerInfos
         _sublayers: function() {
-            //check for single layer
-            //if so no sublayer/folder controls
+            //check for single sublayer - if so no sublayer/folder controls
             if (this.layer.layerInfos.length > 1) {
                 arrayUtil.forEach(this.layer.layerInfos, lang.hitch(this, function(info) {
                     var pid = info.parentLayerId,
@@ -265,18 +260,18 @@ define([
             
             //check ags version and create legends
             if (this.layer.version >= 10.01) {
-                this._legend();
+                this._legend(this.layer);
             }
         },
         
         //create the layer control menu
         _layerMenu: function() {
-            this.menu = new Menu({
+            this._layerMenu = new Menu({
                 contextMenuForWindow: false,
                 targetNodeIds: [this.labelNode],
                 leftClickToOpen: true
             });
-            var menu = this.menu,
+            var menu = this._layerMenu,
                 lp = this.layerParams,
                 layer = this.layer,
                 controller = this.controller;
@@ -310,13 +305,13 @@ define([
             //add move up and down if in a controller and reorder = true
             if (controller && controller.reorder) {
                 menu.addChild(new MenuItem({
-                    label: 'Move Layer Up',
+                    label: 'Move Up',
                     onClick: lang.hitch(this, function() {
                         controller._moveUp(this);
                     })
                 }));
                 menu.addChild(new MenuItem({
-                    label: 'Move Layer Down',
+                    label: 'Move Down',
                     onClick: lang.hitch(this, function() {
                         controller._moveDown(this);
                     })
@@ -326,77 +321,85 @@ define([
             
             //zoom to layer extent
             menu.addChild(new MenuItem({
-                label: 'Zoom to Layer Extent',
+                label: 'Zoom to Layer',
                 onClick: lang.hitch(this, function() {
                     this._zoomToLayer();
                 })
             }));
             
-            //opacity slider
-            this.opacitySlider = new HorizontalSlider({
-                id: lp.id + '_opacity_slider',
+            //layer transparency
+            var transparencySlider = new HorizontalSlider({
                 value: lp.opacity || 1,
                 minimum: 0,
                 maximum: 1,
                 discreteValues: 11,
-                showButtons: false,
-                onChange: lang.hitch(this, function(value) {
+                showButtons: true,
+                onChange: function(value) {
                     layer.setOpacity(value);
                     arrayUtil.forEach(query('.' + lp.id + '-layerLegendImage'), function(img) {
                         domStyle.set(img, 'opacity', value);
                     });
-                })
+                }
             });
             var rule = new HorizontalRuleLabels({
-                style: 'height:1em;font-size:75%;color:gray;'
-            }, this.opacitySlider.bottomDecoration);
+                labels: ['100%', '50%', '0%'],
+                style: 'height:1em;font-size:75%;'
+            }, transparencySlider.bottomDecoration);
             rule.startup();
-            var opacityTooltip = new TooltipDialog({
+            transparencySlider.startup();
+            var transparencyTooltip = new TooltipDialog({
                 style: 'width:200px;',
-                content: this.opacitySlider
+                content: transparencySlider
             });
-            domStyle.set(opacityTooltip.connectorNode, 'display', 'none');
+            domStyle.set(transparencyTooltip.connectorNode, 'display', 'none');
+            transparencyTooltip.startup();
             menu.addChild(new PopupMenuItem({
-                label: 'Layer Opacity',
-                popup: opacityTooltip
+                label: 'Transparency',
+                popup: transparencyTooltip
             }));
+            
+            //layer min/max scales
+            //if (lp.components.scales === true) {
+            //    
+            //}
             
             //and done
             menu.startup();
         },
         
         //create legends for each sublayer and place in sublayer control's expand node
-        _legend: function() {
+        _legend: function(layer) {
+            
             //get legend json
             esriRequest({
-                url: this.layer.url + '/legend',
+                url: layer.url + '/legend',
                 callbackParamName: 'callback',
                 content: {
                     f: 'json',
-                    token: (typeof this.layer._getToken === 'function') ? this.layer._getToken() : null
+                    token: (typeof layer._getToken === 'function') ? layer._getToken() : null
                 }
             }).then(lang.hitch(this, function(r) {
                 //build table of legends for each sublayer
-                arrayUtil.forEach(r.layers, function(layer) {
-                    var legendContent = '<table class="' + this.layer.id + '-' + layer.layerId + '-legend layerControlLegendTable">';
-                    arrayUtil.forEach(layer.legend, function(legend) {
+                arrayUtil.forEach(r.layers, function(_layer) {
+                    var legendContent = '<table class="' + layer.id + '-' + _layer.layerId + '-legend layerControlLegendTable">';
+                    arrayUtil.forEach(_layer.legend, function(legend) {
                         var label = legend.label || '&nbsp;';
-                        legendContent += '<tr><td><img class="' + this.layer.id + '-layerLegendImage layerControlLegendImage" style="width:' + legend.width + ';height:' + legend.height + ';" src="data:' + legend.contentType + ';base64,' + legend.imageData + '" alt="' + label + '" /></td><td>' + label + '</td></tr>';
+                        legendContent += '<tr><td><img class="' + layer.id + '-layerLegendImage layerControlLegendImage" style="width:' + legend.width + ';height:' + legend.height + ';" src="data:' + legend.contentType + ';base64,' + legend.imageData + '" alt="' + label + '" /></td><td>' + label + '</td></tr>';
                     }, this);
                     legendContent += '</table>';
                     
                     //check for single layer
                     //if so use expandNode for legend
-                    if (this.layer.layerInfos.length > 1) {
-                        registry.byId(this.layer.id + '-' + layer.layerId + '-sublayer-control').expandNode.innerHTML = legendContent;
+                    if (layer.layerInfos.length > 1) {
+                        registry.byId(layer.id + '-' + _layer.layerId + '-sublayer-control').expandNode.innerHTML = legendContent;
                     } else {
                         this.expandNode.innerHTML = legendContent;
                     }
                 }, this);
                 
                 //set opacity per layer.opacity
-                arrayUtil.forEach(query('.' + this.layer.id + '-layerLegendImage'), function(img) {
-                    domStyle.set(img, 'opacity', this.layer.opacity);
+                arrayUtil.forEach(query('.' + layer.id + '-layerLegendImage'), function(img) {
+                    domStyle.set(img, 'opacity', layer.opacity);
                 }, this);
             }), lang.hitch(this, function(e) {
                 console.log(e);
@@ -424,7 +427,7 @@ define([
         _setVisibleLayers: function() {
             //because ags doesn't respect a layer group's visibility
             //i.e. layer 3 (the group) is off but it's sublayers still show
-            //we need to check and if it's off also remove it's sublayers
+            //so check and if group is off also remove the sublayers
             var setLayers = [];
             arrayUtil.forEach(query('.' + this.layer.id + '-layer-checkbox'), function(i) {
                 if (i.checked) {
@@ -485,7 +488,10 @@ define([
                 map.setExtent(layer.fullExtent, true);
             } else {
                 if (esriConfig.defaults.geometryService) {
-                    esriConfig.defaults.geometryService.project(lang.mixin(new ProjectParameters(), {geometries: [layer.fullExtent], outSR: map.spatialReference}), function(r) {
+                    esriConfig.defaults.geometryService.project(lang.mixin(new ProjectParameters(), {
+                        geometries: [layer.fullExtent],
+                        outSR: map.spatialReference
+                    }), function(r) {
                         map.setExtent(r[0], true);
                     }, function(e) {
                         console.log(e);
