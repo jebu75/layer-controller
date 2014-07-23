@@ -43,16 +43,16 @@ define([
         _vectorContainer: null,
         _overlayContainer: null,
         _layerControls: {
-            dynamic: 'gis/dijit/LayerController/controls/Dynamic',
-            feature: 'gis/dijit/LayerController/controls/Feature',
-            image: 'gis/dijit/LayerController/controls/Image',
-            tiled: 'gis/dijit/LayerController/controls/Tiled',
-            webTiled: 'gis/dijit/LayerController/controls/WebTiled'
+            dynamic: 'gis/dijit/LayerController/controls/Dynamic'
+            //feature: 'gis/dijit/LayerController/controls/Feature',
+            //image: 'gis/dijit/LayerController/controls/Image',
+            //tiled: 'gis/dijit/LayerController/controls/Tiled',
+            //webTiled: 'gis/dijit/LayerController/controls/WebTiled'
         },
         _components: {
-            Scales: 'gis/dijit/LayerController/components/Scales',
-            Transparency: 'gis/dijit/LayerController/components/Transparency',
-            Interval: 'gis/dijit/LayerController/components/Interval'
+            Scales: 'gis/dijit/LayerController/components/Scales'
+            //Transparency: 'gis/dijit/LayerController/components/Transparency',
+            //Interval: 'gis/dijit/LayerController/components/Interval'
         },
         _applicationLayers: [],
         

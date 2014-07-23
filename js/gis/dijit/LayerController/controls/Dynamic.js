@@ -1,3 +1,4 @@
+/* ags dynamic control */
 define([
     'dojo/_base/declare',
     'dojo/_base/lang',
@@ -92,18 +93,25 @@ define([
         
         //add layer and init control
         _initialize: function(params, map) {
-            
-            var layerOptions = params.layerOptions || {visibile: false},
-                token = params.token || null;
-            
-            this.layer = new ArcGISDynamicMapServiceLayer((token) ? params.url + '?token=' + token : params.url, layerOptions);
-            
-            //reset url if secured
-            if (token) {
-                this.layer.url = params.url;
+            if (params.layer && layer.isInstanceOf('esri.layers.ArcGISDynamicMapServiceLayer')) {
+                this.layer = params.layer;
+            } else if (params.layerOptions) {
+                var layerOptions = params.layerOptions,
+                    token = params.token || null;
+                
+                this.layer = new ArcGISDynamicMapServiceLayer((token) ? params.url + '?token=' + token : params.url, layerOptions);
+                
+                //reset url if secured
+                if (token) {
+                    this.layer.url = params.url;
+                }
+                
+                map.addLayer(this.layer);
+            } else {
+                console.log('Dynamic error::a valid dynamic layer or layerOptions are required');
+                html.set(this.labelNode, (params.title || 'Unknown Layer') + ': Invalid Layer');
+                return;
             }
-            
-            map.addLayer(this.layer);
             
             lang.mixin(this.layer, params.layerExtend || {});
             
@@ -227,7 +235,7 @@ define([
             }
             
             //check ags version and create legends
-            //perhaps check in _legend and use arcgis legend helper?
+            //perhaps check in _legend and use arcgis legend helper for < 10.01?
             if (this.layer.version >= 10.01) {
                 this._legend(this.layer);
             }
