@@ -34,16 +34,13 @@ define([
     'use strict';
     return declare([WidgetBase, TemplatedMixin], {
         templateString: sublayerTemplate,
-        
         //options
         control: null,
         sublayer: null,
-        
         constructor: function(options) {
             options = options || {};
             lang.mixin(this, options);
         },
-        
         postCreate: function() {
             this.checkbox = new CheckBox({
                 checked: this.sublayerInfo.defaultVisibility,
@@ -52,9 +49,7 @@ define([
                     this._checkboxScaleRange();
                 })
             }, this.checkboxNode);
-            
             html.set(this.labelNode, this.sublayerInfo.name);
-            
             //toggle expandNode
             on(this.expandClickNode, 'click', lang.hitch(this, function() {
                 var expandNode = this.expandNode,
@@ -69,15 +64,12 @@ define([
                     domClass.add(iconNode, 'fa-plus-square-o');
                 }
             }));
-            
             if (this.sublayerInfo.minScale !== 0 || this.sublayerInfo.maxScale !== 0) {
                 this._checkboxScaleRange();
                 this.control.layer.getMap().on('zoom-end', lang.hitch(this, '_checkboxScaleRange'));
             }
-            
             domAttr.set(this.checkbox.focusNode, 'data-layer-id', this.sublayerInfo.id);
             domClass.add(this.checkbox.focusNode, this.control.layer.id + '-layer-checkbox');
-            
             //add custom menu items
             var items = this.control.params.controlOptions.sublayerMenuItems;
             if (items && items.length) {
@@ -86,7 +78,6 @@ define([
                 domClass.remove(this.labelNode, 'layerControlClick');
             }
         },
-        
         //check scales and add/remove disabled classes from checkbox
         _checkboxScaleRange: function() {
             var node = this.checkbox.domNode,
@@ -112,7 +103,6 @@ define([
                 }
             }
         },
-        
         //create menu
         _sublayerMenu: function(items) {
             this._menu = new Menu({

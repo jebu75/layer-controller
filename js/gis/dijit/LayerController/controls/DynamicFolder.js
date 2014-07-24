@@ -26,16 +26,13 @@ define([
     'use strict';
     return declare([WidgetBase, TemplatedMixin], {
         templateString: folderTemplate,
-        
         //options
         control: null,
         folderInfo: null,
-        
         constructor: function(options) {
             options = options || {};
             lang.mixin(this, options);
         },
-        
         postCreate: function() {
             this.checkbox = new CheckBox({
                 checked: this.folderInfo.defaultVisibility,
@@ -44,9 +41,7 @@ define([
                     this._checkboxScaleRange();
                 })
             }, this.checkboxNode);
-            
             html.set(this.labelNode, this.folderInfo.name);
-            
             on(this.expandClickNode, 'click', lang.hitch(this, function() {
                 var expandNode = this.expandNode,
                     iconNode = this.expandIconNode;
@@ -60,16 +55,13 @@ define([
                     domClass.add(iconNode, 'fa-folder-o');
                 }
             }));
-            
             if (this.folderInfo.minScale !== 0 || this.folderInfo.maxScale !== 0) {
                 this._checkboxScaleRange();
                 this.control.layer.getMap().on('zoom-end', lang.hitch(this, '_checkboxScaleRange'));
             }
-            
             domAttr.set(this.checkbox.focusNode, 'data-layer-id', this.folderInfo.id);
             domClass.add(this.checkbox.focusNode, this.control.layer.id + '-layer-checkbox');
         },
-        
         //check scales and add/remove disabled classes from checkbox
         _checkboxScaleRange: function() {
             var node = this.checkbox.domNode,

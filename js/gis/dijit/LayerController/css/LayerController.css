@@ -51,8 +51,8 @@
     user-select: none;
 }
 
-.layerControlClick {
-    decoration: underline;
+.layerControlClick:hover {
+    text-decoration: underline;
 }
 
 .layerControlLegendTable tr {

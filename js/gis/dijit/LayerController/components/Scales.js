@@ -1,25 +1,29 @@
-/*
- * tooltip dialog for setting layer min/max scales
- */
+/* set layer scales component */
 define([
     'dojo/_base/declare',
     'dojo/_base/lang',
+    'dojo/dom-style',
     'dojo/html',
     'dojo/number',
+    'dijit/PopupMenuItem',
     'dijit/TooltipDialog',
-    'dojo/text!app/controls/templates/ScaleTooltipDialog.html',
+    'dojo/text!gis/dijit/LayerController/components/templates/Scales.html'
 ], function (
     declare,
     lang,
+    domStyle,
     html,
     number,
+    PopupMenuItem,
     TooltipDialog,
-    scaleTooltipDialogTemplate
+    scalesTemplate
 ) {
     'use strict';
-    return declare([TooltipDialog], {
-        templateString: scaleTooltipDialogTemplate,
+    //custom tooltip dialog
+    var ScalesTooltipDialog = declare([TooltipDialog], {
+        templateString: scalesTemplate,
         layer: null,
+        map: null,
         constructor: function (options) {
             options = options || {};
             lang.mixin(this, options);
@@ -60,6 +64,20 @@ define([
         _setHtml: function (node, cont, params) {
             params = params || {};
             html.set(node, cont, params);
+        }
+    });
+    //the menu item
+    return declare(PopupMenuItem, {
+        constructor: function(options) {
+            options = options || {};
+            lang.mixin(this, options);
+        },
+        postCreate: function() {
+            this.popup = new ScalesTooltipDialog({
+                layer: this.layer
+            });
+            domStyle.set(this.popup.connectorNode, 'display', 'none');
+            this.popup.startup();
         }
     });
 });
