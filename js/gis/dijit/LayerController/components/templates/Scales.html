@@ -1,0 +1,34 @@
+<div role="alertdialog" tabIndex="-1">
+    <div class="dijitTooltipContainer" role="presentation">
+        <div data-dojo-attach-point="contentsNode" class="dijitTooltipContents dijitTooltipFocusNode">
+            <div data-dojo-attach-point="containerNode">
+                <table>
+                    <tr>
+                        <td>Map Scale:&nbsp;&nbsp;<span data-dojo-attach-point="mapScaleNode"></span></td>
+                    </tr>
+                    <tr>
+                        <td>Min Scale:&nbsp;&nbsp;<span data-dojo-attach-point="minScaleNode"></span></td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <span data-dojo-attach-event="click: _setMinScale" class="layerControlClick">Set Min Scale</span>
+                            &nbsp;
+                            <span data-dojo-attach-event="click: _clearMinScale" class="layerControlClick">Clear Min Scale</span>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>Max Scale:&nbsp;&nbsp;<span data-dojo-attach-point="maxScaleNode"></span></td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <span data-dojo-attach-event="click: _setMaxScale" class="layerControlClick">Set Max Scale</span>
+                            &nbsp;
+                            <span data-dojo-attach-event="click: _clearMaxScale" class="layerControlClick">Clear Max Scale</span>
+                        </td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+    </div>
+    <div class="dijitTooltipConnector" role="presentation" data-dojo-attach-point="connectorNode"></div>
+</div>
