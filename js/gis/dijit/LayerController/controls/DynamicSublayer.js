@@ -34,7 +34,6 @@ define([
     'use strict';
     return declare([WidgetBase, TemplatedMixin], {
         templateString: sublayerTemplate,
-        //options
         control: null,
         sublayer: null,
         constructor: function(options) {
@@ -42,15 +41,29 @@ define([
             lang.mixin(this, options);
         },
         postCreate: function() {
-            this.checkbox = new CheckBox({
-                checked: this.sublayerInfo.defaultVisibility,
-                onChange: lang.hitch(this, function() {
-                    this.control._setVisibleLayers();
-                    this._checkboxScaleRange();
-                })
-            }, this.checkboxNode);
+            if (this.sublayerInfo.defaultVisibility) {
+                domClass.remove(this.checkNode, 'fa-square-o');
+                domClass.add(this.checkNode, 'fa fa-check-square-o');
+                domAttr.set(this.checkNode, 'data-checked', 'checked');
+            } else {
+                domAttr.set(this.checkNode, 'data-checked', 'unchecked');
+            }
+            domAttr.set(this.checkNode, 'data-sublayer-id', this.sublayerInfo.id);
+            domClass.add(this.checkNode, this.control.layer.id + '-layerControlSublayerCheck');
+            on(this.checkNode, 'click', lang.hitch(this, function() {
+                if (domAttr.get(this.checkNode, 'data-checked') === 'checked') {
+                    domAttr.set(this.checkNode, 'data-checked', 'unchecked');
+                    domClass.remove(this.checkNode, 'fa-check-square-o');
+                    domClass.add(this.checkNode, 'fa-square-o');
+                } else {
+                    domAttr.set(this.checkNode, 'data-checked', 'checked');
+                    domClass.remove(this.checkNode, 'fa-square-o');
+                    domClass.add(this.checkNode, 'fa-check-square-o');
+                }
+                this.control._setVisibleLayers();
+                this._checkboxScaleRange();
+            }));
             html.set(this.labelNode, this.sublayerInfo.name);
-            //toggle expandNode
             on(this.expandClickNode, 'click', lang.hitch(this, function() {
                 var expandNode = this.expandNode,
                     iconNode = this.expandIconNode;
@@ -68,8 +81,6 @@ define([
                 this._checkboxScaleRange();
                 this.control.layer.getMap().on('zoom-end', lang.hitch(this, '_checkboxScaleRange'));
             }
-            domAttr.set(this.checkbox.focusNode, 'data-layer-id', this.sublayerInfo.id);
-            domClass.add(this.checkbox.focusNode, this.control.layer.id + '-layer-checkbox');
             //add custom menu items
             var items = this.control.params.controlOptions.sublayerMenuItems;
             if (items && items.length) {
@@ -80,44 +91,30 @@ define([
         },
         //check scales and add/remove disabled classes from checkbox
         _checkboxScaleRange: function() {
-            var node = this.checkbox.domNode,
-                checked = this.checkbox.checked,
+            var node = this.checkNode,
                 scale = this.control.layer.getMap().getScale(),
                 min = this.sublayerInfo.minScale,
-                max = this.sublayerInfo.maxScale,
-                x = 'dijitCheckBoxDisabled',
-                y = 'dijitCheckBoxCheckedDisabled';
-            domClass.remove(node, [x, y]);
-            if (min !== 0 && scale > min) {
-                if (checked) {
-                    domClass.add(node, y);
-                } else {
-                    domClass.add(node, x);
-                }
-            }
-            if (max !== 0 && scale < max) {
-                if (checked) {
-                    domClass.add(node, y);
-                } else {
-                    domClass.add(node, x);
-                }
+                max = this.sublayerInfo.maxScale;
+            domClass.remove(node, 'layerControlCheckIconOutScale');
+            if ((min !== 0 && scale > min) || (max !== 0 && scale < max)) {
+                domClass.add(node, 'layerControlCheckIconOutScale');
             }
         },
         //create menu
         _sublayerMenu: function(items) {
-            this._menu = new Menu({
+            var menu = new Menu({
                 contextMenuForWindow: false,
                 targetNodeIds: [this.labelNode],
                 leftClickToOpen: true
             });
             arrayUtil.forEach(items, function (item) {
                 if (item.separator && item.separator === 'separator') {
-                    this._menu.addChild(new MenuSeparator());
+                    menu.addChild(new MenuSeparator());
                 } else {
-                    this._menu.addChild(new MenuItem(item));
+                    menu.addChild(new MenuItem(item));
                 }
             }, this);
-            this._menu.startup();
+            menu.startup();
         }
     });
 });

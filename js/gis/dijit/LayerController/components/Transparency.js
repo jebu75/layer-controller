@@ -33,7 +33,7 @@ define([
                 minimum: 0,
                 maximum: 1,
                 discreteValues: 11,
-                showButtons: true,
+                showButtons: false,
                 onChange: lang.hitch(this, function(value) {
                     this.layer.setOpacity(value);
                     arrayUtil.forEach(query('.' + this.layer.id + '-layerLegendImage'), function(img) {

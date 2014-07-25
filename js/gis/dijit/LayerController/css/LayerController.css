@@ -1,3 +1,4 @@
+/* don't include this file - LayerController loads via xstyle/css */
 .vectorLayerContainer {
 
 }
@@ -7,7 +8,9 @@
 }
 
 .layerControl {
-    /* layer control base class */
+    margin-bottom: 4px;
+    padding-bottom: 2px;
+    border-bottom: solid 1px #e5e5e5;
 }
 
 .layerControlTable {
@@ -18,32 +21,56 @@
     vertical-align: middle;
 }
 
-.layerControlTableExpand {
-    cursor: pointer;
-    text-align: center;
-    width: 1.2em;
+.layerControlTable td {
+    padding: 0;
 }
 
-.layerControlTableCheckbox, .layerControlTableUpdate {
-    text-align: center;
-    width: 1.2em;
+.layerControlTableExpand {
+    cursor: pointer;
+    width: 18px;
+    height: 15px;
+    line-height: 15px;
+}
+
+.layerControlTableCheck {
+    cursor: pointer;
+    width: 18px;
+    height: 15px;
+    line-height: 15px;
 }
 
 .layerControlTableLabel {
-    font-size: 110%;
+    font-size: 14px;
+    height: 15px;
+    line-height: 15px;
+}
+
+.layerControlTableUpdate {
+    width: 20px;
+    height: 15px;
+    line-height: 15px;
+    text-align: center;
 }
 
 .layerControlIndent {
     padding-left: 20px;
 }
 
-.layerControlToggleIcon {
-    font-size: 115%;
+.layerControlIcon {
+    font-size: 15px;
+}
+
+.layerControlUpdateIcon {
+    font-size: 13px
+}
+
+.layerControlCheckIconOutScale {
+    color: #BBB;
 }
 
 .layerControlClick {
     cursor: pointer;
-    color: #369;
+    color: #1f78af;
     text-decoration: none;
     -webkit-user-select: none;
     -moz-user-select: none;
@@ -59,11 +86,11 @@
     vertical-align: middle;
 }
 
-.layerControlLegendTable td {
+.layerControlLegendImage > img {
+    border: none;
     padding: 0;
 }
 
-.layerControlLegendImage {
-    border: none;
-    padding: 0;
+.layerControlLegendLabel {
+    padding: 0 0 0 4px;
 }
