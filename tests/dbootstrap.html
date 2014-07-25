@@ -6,7 +6,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
 <meta name="description" content="A layer loading and control widget for esrijs.">
 <meta name="author" content="btfou">
-<title>Layer Controller | Dynamic Tests</title>
+<title>Layer Controller | dbootstrap test</title>
 <!-- loading fonts with xstyle can result in unseemly font changes as text is rendered before css is loaded -->
 <link href="//fonts.googleapis.com/css?family=Open+Sans:400,600,800" rel="stylesheet">
 <!-- Font Awesome is required!!! -->
@@ -20,20 +20,31 @@ html, body {
 }
 body {
     font: 12px 'Open Sans', sans-serif;
-    color: #333;
 }
 h2 {
     margin:0 0 6px 0;
 }
 </style>
 </head>
-<body class="claro">
+<body class="dbootstrap">
 <div id="container"></div>
-<script>dojoConfig = {async: true, packages: [{name: 'gis', location: (location.pathname.replace(/[^\/]+$/, '') + 'js/gis').replace('/tests', '')}]};</script>
+<script>
+dojoConfig = {
+    async: true,
+    packages: [{
+        name: 'dbootstrap',
+        location: (location.pathname.replace(/[^\/]+$/, '') + 'js/dbootstrap').replace('/tests', '')
+    }, {
+        name: 'gis',
+        location: (location.pathname.replace(/[^\/]+$/, '') + 'js/gis').replace('/tests', '')
+    }]
+};
+</script>
 <script src="//js.arcgis.com/3.10compact/"></script>
 <script>
 var map, layerController; //dev
 require([
+    'dbootstrap',
     'dijit/layout/BorderContainer',
     'dijit/layout/ContentPane',
     'esri/config',
@@ -41,10 +52,11 @@ require([
     'esri/map',
     'esri/layers/ImageParameters',
     'gis/dijit/LayerController',
-    'xstyle/css!dijit/themes/claro/claro.css',
+    //'xstyle/css!dijit/themes/claro/claro.css',
     'xstyle/css!esri/css/esri.css',
     'dojo/domReady!'
 ], function (
+    dbootstrap,
     BC,
     CP,
     esriConfig,
@@ -58,7 +70,7 @@ require([
     //layout
     var bc = new BC({liveSplitters: false, style: 'width:100%;height:100%;z-index:1;'}, 'container');
     bc.startup();
-    bc.addChild(new CP({region: 'left', content: '<h2>Dynamic Tests</h2><div id="layer-controller"></div>', style: 'width:350px;z-index:1;'}));
+    bc.addChild(new CP({region: 'left', content: '<h2>Layer Controller</h2><div id="layer-controller"></div>', style: 'width:350px;z-index:1;'}));
     bc.addChild(new CP({region: 'center', id: 'map', style: 'padding:0;overflow:hidden;z-index:1;'}));
     
     //layer controller uses default geom srv for zooming to layer extent if not in map sr
@@ -118,7 +130,8 @@ require([
         operationalLayers: operationalLayers,
         components: ['transparency', 'scales'],
         reorder: true,
-        basemapCount: 1
+        basemapCount: 1,
+        dbootstrap: true
     }, 'layer-controller');
     layerController.startup();
 });

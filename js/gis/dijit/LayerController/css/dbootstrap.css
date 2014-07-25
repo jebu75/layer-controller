@@ -1,0 +1,42 @@
+/* overrides for dbootstrap */
+/* don't include this file - set LayerController `dbootstrap` option to `true` */
+.layerControl {
+    margin-bottom: 6px;
+    padding-bottom: 4px;
+}
+
+.layerControlTableExpand {
+    width: 19px;
+    height: 16px;
+    line-height: 16px;
+}
+
+.layerControlTableCheck {
+    width: 19px;
+    height: 16px;
+    line-height: 16px;
+}
+
+.layerControlTableLabel {
+    font-size: 15px;
+    height: 16px;
+    line-height: 16px;
+}
+
+.layerControlTableUpdate {
+    width: 21px;
+    height: 16px;
+    line-height: 16px;
+}
+
+.layerControlIndent {
+    padding-left: 22px;
+}
+
+.layerControlIcon {
+    font-size: 16px;
+}
+
+.layerControlUpdateIcon {
+    font-size: 14px
+}

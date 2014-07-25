@@ -124,10 +124,11 @@ define([
                 return;
             }
             lang.mixin(this.layer, params.layerExtend);
-            this.checkbox = new CheckBox({
-                checked: params.layerOptions.visible,
-                onChange: lang.hitch(this, '_toggleLayer')
-            }, this.checkboxNode);
+            if (params.layerOptions.visible) {
+                domClass.remove(this.checkNode, 'fa-square-o');
+                domClass.add(this.checkNode, 'fa fa-check-square-o');
+            }
+            on(this.checkNode, 'click', lang.hitch(this, '_toggleLayer'));
             html.set(this.labelNode, params.title);
             this.layer.on('update-start', lang.hitch(this, function() {
                 domStyle.set(this.layerUpdateNode, 'display', 'inline-block'); //font awesome display
@@ -367,18 +368,18 @@ define([
                     var legendContent;
                     if (!this.params.controlOptions.sublayers && this.params.controlOptions.visibleLayers.length === 1) {
                         var layerId = this.params.controlOptions.visibleLayers[0];
-                        legendContent = '<table class="' + layer.id + '-' + layerId + '-legend layerControlLegendTable">';
+                        legendContent = '<table class="layerControlLegendTable">';
                         arrayUtil.forEach(r.layers[layerId].legend, function(legend) {
                             var label = legend.label || '&nbsp;';
-                            legendContent += '<tr><td><img class="' + layer.id + '-layerLegendImage layerControlLegendImage" style="width:' + legend.width + ';height:' + legend.height + ';" src="data:' + legend.contentType + ';base64,' + legend.imageData + '" alt="' + label + '" /></td><td>' + label + '</td></tr>';
+                            legendContent += '<tr><td class="layerControlLegendImage"><img class="' + layer.id + '-layerLegendImage" style="width:' + legend.width + ';height:' + legend.height + ';" src="data:' + legend.contentType + ';base64,' + legend.imageData + '" alt="' + label + '" /></td><td class="layerControlLegendLabel">' + label + '</td></tr>';
                         }, this);
                         legendContent += '</table>';
                         html.set(this.expandNode, legendContent);
                     } else {
-                        legendContent = '<table class="' + layer.id + '-' + _layer.layerId + '-legend layerControlLegendTable">';
+                        legendContent = '<table class="layerControlLegendTable">';
                         arrayUtil.forEach(_layer.legend, function(legend) {
                             var label = legend.label || '&nbsp;';
-                            legendContent += '<tr><td><img class="' + layer.id + '-layerLegendImage layerControlLegendImage" style="opacity:' + layer.opacity + ';width:' + legend.width + ';height:' + legend.height + ';" src="data:' + legend.contentType + ';base64,' + legend.imageData + '" alt="' + label + '" /></td><td>' + label + '</td></tr>';
+                            legendContent += '<tr><td class="layerControlLegendImage"><img class="' + layer.id + '-layerLegendImage" style="opacity:' + layer.opacity + ';width:' + legend.width + ';height:' + legend.height + ';" src="data:' + legend.contentType + ';base64,' + legend.imageData + '" alt="' + label + '" /></td><td class="layerControlLegendLabel">' + label + '</td></tr>';
                         }, this);
                         legendContent += '</table>';
                         //check for single layer
@@ -403,8 +404,12 @@ define([
             var layer = this.layer;
             if (layer.visible) {
                 layer.hide();
+                domClass.remove(this.checkNode, 'fa-check-square-o');
+                domClass.add(this.checkNode, 'fa-square-o');
             } else {
                 layer.show();
+                domClass.remove(this.checkNode, 'fa-square-o');
+                domClass.add(this.checkNode, 'fa-check-square-o');
             }
             if (layer.minScale !== 0 || layer.maxScale !== 0) {
                 this._checkboxScaleRange();
@@ -417,9 +422,9 @@ define([
             //so check and if group is off also remove the sublayers
             var layer = this.layer,
                 setLayers = [];
-            arrayUtil.forEach(query('.' + layer.id + '-layer-checkbox'), function(i) {
-                if (i.checked) {
-                    setLayers.push(parseInt(domAttr.get(i, 'data-layer-id'), 10));
+            arrayUtil.forEach(query('.' + layer.id + '-layerControlSublayerCheck'), function(i) {
+                if (domAttr.get(i, 'data-checked') === 'checked') {
+                    setLayers.push(parseInt(domAttr.get(i, 'data-sublayer-id'), 10));
                 }
             }, this);
             arrayUtil.forEach(layer.layerInfos, function(info) {
@@ -443,28 +448,14 @@ define([
         },
         //check scales and add/remove disabled classes from checkbox
         _checkboxScaleRange: function() {
-            var node = this.checkbox.domNode,
-                checked = this.checkbox.checked,
+            var node = this.checkNode,
                 layer = this.layer,
                 scale = layer.getMap().getScale(),
                 min = layer.minScale,
-                max = layer.maxScale,
-                x = 'dijitCheckBoxDisabled',
-                y = 'dijitCheckBoxCheckedDisabled';
-            domClass.remove(node, [x, y]);
-            if (min !== 0 && scale > min) {
-                if (checked) {
-                    domClass.add(node, y);
-                } else {
-                    domClass.add(node, x);
-                }
-            }
-            if (max !== 0 && scale < max) {
-                if (checked) {
-                    domClass.add(node, y);
-                } else {
-                    domClass.add(node, x);
-                }
+                max = layer.maxScale;
+            domClass.remove(node, 'layerControlCheckIconOutScale');
+            if ((min !== 0 && scale > min) || (max !== 0 && scale < max)) {
+                domClass.add(node, 'layerControlCheckIconOutScale');
             }
         }
     });

@@ -32,6 +32,7 @@ define([
         components: [],
         reorder: false,
         basemapCount: 0,
+        dbootstrap: false,
         //private properties
         _vectorContainer: null,
         _overlayContainer: null,
@@ -81,6 +82,9 @@ define([
             
             //load layer controls and components
             var modules = [];
+            if (this.dbootstrap) {
+                modules.push('xstyle/css!gis/dijit/LayerController/css/dbootstrap.css');
+            }
             arrayUtil.forEach(this.components, function(component) {
                 var mod = this._components[component];
                 if (mod) {
